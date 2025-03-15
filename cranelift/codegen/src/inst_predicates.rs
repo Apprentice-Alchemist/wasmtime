@@ -149,6 +149,7 @@ pub fn has_memory_fence_semantics(op: Opcode) -> bool {
         | Opcode::Fence
         | Opcode::Debugtrap => true,
         Opcode::Call | Opcode::CallIndirect => true,
+        Opcode::Setjmp => true,
         op if op.can_trap() => true,
         _ => false,
     }

@@ -5885,7 +5885,9 @@
         NearestF64
         TruncF32
         TruncF64
-        X86Pshufb))
+        X86Pshufb
+        SetJmp
+        LongJmp))
 
 (decl libcall_1 (LibCall Reg) Reg)
 (extern constructor libcall_1 libcall_1)

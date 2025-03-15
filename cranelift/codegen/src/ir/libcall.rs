@@ -59,6 +59,11 @@ pub enum LibCall {
 
     /// The `pshufb` on x86 when SSSE3 isn't available.
     X86Pshufb,
+
+    /// libc.setjmp
+    SetJmp,
+    /// libc.longjmp
+    LongJmp,
     // When adding a new variant make sure to add it to `all_libcalls` too.
 }
 
@@ -93,6 +98,8 @@ impl FromStr for LibCall {
             "ElfTlsGetOffset" => Ok(Self::ElfTlsGetOffset),
 
             "X86Pshufb" => Ok(Self::X86Pshufb),
+            "SetJmp" => Ok(Self::SetJmp),
+            "LongJmp" => Ok(Self::LongJmp),
             _ => Err(()),
         }
     }
@@ -121,6 +128,7 @@ impl LibCall {
             ElfTlsGetAddr,
             ElfTlsGetOffset,
             X86Pshufb,
+            SetJmp,
         ]
     }
 
@@ -176,6 +184,14 @@ impl LibCall {
                 sig.params.push(AbiParam::new(I8X16));
                 sig.params.push(AbiParam::new(I8X16));
                 sig.returns.push(AbiParam::new(I8X16));
+            },
+            LibCall::SetJmp => {
+                sig.params.push(AbiParam::new(pointer_type));
+                sig.returns.push(AbiParam::new(I32));
+            }
+            LibCall::LongJmp => {
+                sig.params.push(AbiParam::new(pointer_type));
+                sig.params.push(AbiParam::new(I32))
             }
         }
 

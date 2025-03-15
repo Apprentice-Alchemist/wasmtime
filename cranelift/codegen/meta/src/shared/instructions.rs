@@ -58,6 +58,38 @@ fn define_control_flow(
         .branches(),
     );
 
+    let JumpBuf = &TypeVar::new(
+        "JumpBuf",
+        "A jmp_buf pointer",
+        TypeSetBuilder::new().ints(Interval::All).build(),
+    );
+
+    ig.push(Inst::new(
+        "setjmp",
+        r#"
+        Non-local goto using setjmp.
+        
+        Take the ``block_setjmp`` for the initial return, and the ``block_longjmp`` for the return after a longjmp.
+        "#,
+        &formats.brif
+    ).operands_in(vec![
+        Operand::new("env", JumpBuf).with_doc("jmp_buf to store the environment in"),
+        Operand::new("block_setjmp", &entities.block_setjmp).with_doc("Block taken upon initial return"),
+        Operand::new("block_longjmp", &entities.block_longjmp).with_doc("Block taken after successful return"),
+    ]).branches());
+
+    ig.push(
+        Inst::new(
+            "longjmp",
+            r#"Jump to the setjmp point stored in ``env``"#,
+            &formats.unary,
+        )
+        .operands_in(vec![
+            Operand::new("env", JumpBuf).with_doc("jmp_buf to store the environment in")
+        ])
+        .terminates_block(),
+    );
+
     {
         let _i32 = &TypeVar::new(
             "i32",

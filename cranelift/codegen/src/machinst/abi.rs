@@ -1991,6 +1991,7 @@ pub struct CallSite<M: ABIMachineSpec> {
     /// Call destination.
     dest: CallDest,
     is_tail_call: IsTailCall,
+    returns_twice: bool,
     /// Caller's calling convention.
     caller_conv: isa::CallConv,
     /// The settings controlling this compilation.
@@ -2026,6 +2027,7 @@ impl<M: ABIMachineSpec> CallSite<M> {
             defs: smallvec![],
             dest: CallDest::ExtName(extname.clone(), dist),
             is_tail_call,
+            returns_twice: false,
             caller_conv,
             flags,
             _mach: PhantomData,
@@ -2049,6 +2051,7 @@ impl<M: ABIMachineSpec> CallSite<M> {
             defs: smallvec![],
             dest: CallDest::ExtName(extname.clone(), dist),
             is_tail_call: IsTailCall::No,
+            returns_twice: matches!(extname, ir::ExternalName::LibCall(ir::LibCall::SetJmp)),
             caller_conv,
             flags,
             _mach: PhantomData,
@@ -2072,6 +2075,7 @@ impl<M: ABIMachineSpec> CallSite<M> {
             defs: smallvec![],
             dest: CallDest::Reg(ptr),
             is_tail_call,
+            returns_twice: false,
             caller_conv,
             flags,
             _mach: PhantomData,
@@ -2092,6 +2096,10 @@ impl<M: ABIMachineSpec> CallSite<M> {
 
     pub(crate) fn is_tail_call(&self) -> bool {
         matches!(self.is_tail_call, IsTailCall::Yes)
+    }
+
+    pub(crate) fn returns_twice(&self) -> bool {
+        self.returns_twice
     }
 }
 

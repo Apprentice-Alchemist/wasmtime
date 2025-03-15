@@ -45,6 +45,11 @@ pub(crate) struct EntityRefs {
 
     /// A variable-sized list of value operands. Use for Block and function call arguments.
     pub(crate) varargs: OperandKind,
+
+    /// Block taken upon initial return
+    pub(crate) block_setjmp: OperandKind,
+    /// Block taken upon successful longjmp
+    pub(crate) block_longjmp: OperandKind,
 }
 
 impl EntityRefs {
@@ -95,6 +100,16 @@ impl EntityRefs {
                         passed to a basic block, or a variable number of results
                         returned from an instruction.
                     "#,
+            ),
+            block_setjmp: new(
+                "block_setjmp",
+                "ir::BlockCall",
+                "a basic block in the same function, with its arguments provided.",
+            ),
+            block_longjmp: new(
+                "block_longjmp",
+                "ir::BlockCall",
+                "a basic block in the same function, with its arguments provided.",
             ),
         }
     }

@@ -5030,3 +5030,23 @@
 
 (rule (lower (nop))
       (invalid_reg))
+
+;; Rules for `setjmp` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; (decl gen_setjmp (Reg) Reg)
+; (extern constructor gen_setjmp gen_setjmp)
+
+(decl gen_longjmp (Reg Reg) InstOutput)
+(extern constructor gen_longjmp gen_longjmp)
+
+(rule (lower_branch (setjmp env _ _) (two_targets setjmp longjmp))
+      (let (
+            (result Gpr (libcall_1 (LibCall.SetJmp) env))
+      )
+      (emit_side_effect (with_flags_side_effect
+                          (x64_test (OperandSize.Size32) result result)
+                          (jmp_cond (CC.NZ) longjmp setjmp)))))
+
+(rule (lower (longjmp env))
+      (gen_longjmp env (imm $I32 1))
+      )

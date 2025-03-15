@@ -678,6 +678,50 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         outputs[0]
     }
 
+    fn gen_longjmp(&mut self, env: Reg, val: Reg) -> InstOutput {
+        use smallvec::SmallVec;
+        use crate::isa::CallConv;
+        use smallvec::smallvec;
+        let inputs = &[env, val];
+        let flags  = &self.backend.flags;
+        let triple = &self.backend.triple;
+        let libcall = LibCall::LongJmp;
+        let extname = ExternalName::LibCall(libcall);
+        
+        let dist = if flags.use_colocated_libcalls() {
+            RelocDistance::Near
+        } else {
+            RelocDistance::Far
+        };
+
+        // TODO avoid recreating signatures for every single Libcall function.
+        let call_conv = CallConv::for_libcall(flags, CallConv::triple_default(triple));
+        let sig = libcall.signature(call_conv, types::I64);
+        let caller_conv = self.lower_ctx.abi().call_conv(self.lower_ctx.sigs());
+
+        if !self.lower_ctx.sigs().have_abi_sig_for_signature(&sig) {
+            self.lower_ctx.sigs_mut()
+                .make_abi_sig_from_ir_signature::<super::X64ABIMachineSpec>(sig.clone(), flags).unwrap();
+        }
+
+        let mut abi =
+            X64CallSite::from_libcall(self.lower_ctx.sigs(), &sig, &extname, dist, caller_conv, flags.clone());
+
+        assert_eq!(inputs.len(), abi.num_args(self.lower_ctx.sigs()));
+
+        for (i, input) in inputs.iter().enumerate() {
+            abi.gen_arg(self.lower_ctx, i, ValueRegs::one(*input));
+        }
+
+        let mut outputs: SmallVec<[_; 2]> = smallvec![];
+
+        abi.emit_call(self.lower_ctx);
+        self.lower_ctx.emit(MInst::Ud2 {
+            trap_code: crate::opts::TrapCode::unwrap_user(1)
+        });
+        outputs
+    }
+
     #[inline]
     fn vconst_all_ones_or_all_zeros(&mut self, constant: Constant) -> Option<()> {
         let const_data = self.lower_ctx.get_constant_data(constant);
